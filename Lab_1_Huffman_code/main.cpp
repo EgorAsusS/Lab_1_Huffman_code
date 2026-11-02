@@ -4,24 +4,18 @@ using namespace std;
 
 struct Node {
     char symbol;
-    //char* code;
-    //unsigned char bits;
     struct Node* left;
     struct Node* right;
-    //Node(char symbol = 0, Node* left = nullptr, Node* right = nullptr, char* code = nullptr, unsigned char bits = 0) {
     Node(char symbol = 0, Node* left = nullptr, Node* right = nullptr) {
         this->symbol = symbol;
         this->left = left;
         this->right = right;
-        //this->code = code;
-        //this->bits = bits;
     }
     ~Node() {
         delete left;
         delete right;
         left = nullptr;
         right = nullptr;
-        //delete[] code;
     }
 };
 
@@ -57,7 +51,7 @@ void quick_sort(size_t* arr, Node** arr_purpose, int l, int r) {
             arr[j] = temp;
             temp_purpose = arr_purpose[i];
             arr_purpose[i] = arr_purpose[j];
-            arr_purpose[i] = temp_purpose;
+            arr_purpose[j] = temp_purpose;
             i++;
             j--;
         }
@@ -74,48 +68,47 @@ void Hoar_sort(size_t* arr_sorting, Node** arr_purpose, int length) {
     }
 }
 
-void fill_Tab_code(Node* ptr, char* code, bool side, char** Tab_code) {
-    bool _is_symbol = !(ptr->left && ptr->right);
+void fill_Tab_code(Node* ptr, char* code, char** Tab_code) {
+    bool _is_not_symbol = ptr->left || ptr->right; // Символы - листья дерева, то есть ptr->left == ptr->right == nullptr
     char* s = code;
-    if (!_is_symbol) {
-        if (*code) {
-            for (s = code; *s; s++);
-            if (side) { // right
-                *s = '1';
-            }
-            else { // left
-                *s = '0';
-            }
+    int i = 0;
+    if (_is_not_symbol) {
+        if (ptr->left) {
+            for (s = code; *s; s++); // Поиск конца кода
+            *s = '0';
+            s++;
+            *s = '\0';
+            fill_Tab_code(ptr->left, code, Tab_code);
+        }
+        if (ptr->right) {
+            for (s = code; *s; s++); // Поиск конца кода
+            *s = '1';
+            s++;
+            *s = '\0';
+            fill_Tab_code(ptr->right, code, Tab_code);
+        }
+        for (s = code; *s; s++); // Поиск конца кода
+        if (s != code) {
+            s--;
+        }
+        *s = '\0'; // Уменьшение кода вверх по дереву
+    }
+    else {
+        if (!*code) { // Если корень и есть символ
+            *s = '0';
             s++;
             *s = '\0';
         }
-        else {
-            *s = '0';
+        Tab_code[(unsigned char)ptr->symbol] = new char[strlen(code) + 1];
+        for (i = 0; code[i]; i++, s++) {
+            Tab_code[(unsigned char)ptr->symbol][i] = code[i];
         }
-    }
-    if (ptr->left) {
-        _is_symbol = 0;
-        fill_Tab_code(ptr->left, code, 0, Tab_code);
-    }
-    if (!*code) {
-        s = code;
-        *s = '1';
-    }
-    if (ptr->right) {
-        _is_symbol = 0;
-        fill_Tab_code(ptr->right, code, 1, Tab_code);
-    }
-
-    // Уменьшение кода вверх по дереву
-    if (_is_symbol) {
-        Tab_code[ptr->symbol] = new char[strlen(code) + 1];
-        int i = 0;
-        for (i = 0; code[i]; i++) {
-            Tab_code[ptr->symbol][i] = code[i];
+        Tab_code[(unsigned char)ptr->symbol][i] = '\0';
+        if (s != code) {
+            s--;
         }
-        Tab_code[ptr->symbol][i] = '\0';
+        *s = '\0'; // Уменьшение кода вверх по дереву
     }
-    *s = '\0';
     return;
 }
 
@@ -144,7 +137,7 @@ int encode(const char* filepath, const char* filepath_new) {
     while (flag > 0) {
         flag = fscanf(file, "%c", &_symbol);
         if (flag > 0) {
-            Tab[_symbol]++;
+            Tab[(unsigned char)_symbol]++;
         }
     }
     if (fseek(file, 0, SEEK_SET)) {
@@ -156,6 +149,9 @@ int encode(const char* filepath, const char* filepath_new) {
             queue_length++;
         }
     }
+    // if (queue_length == 0){
+    //      return 0; // Выход
+    // }
 
     // Создание и заполнение очереди
     Node** queue = new Node*[queue_length];
@@ -170,11 +166,11 @@ int encode(const char* filepath, const char* filepath_new) {
             j++;
         }
     }
-    // Косвенная сортировка очереди по возрастанию частоты символов
     Hoar_sort(queue_frequency, queue, queue_length);
-
+    
     //Построение дерева
     int j = 0;
+    int k = 0;
     while (j != queue_length - 1) {
         ptr_node = new Node(0, queue[j], queue[j + 1]);
         if (!ptr_node) {
@@ -184,6 +180,15 @@ int encode(const char* filepath, const char* filepath_new) {
         queue[j + 1] = ptr_node;
         queue_frequency[j + 1] = ptr_node_frequency;
         queue[j] = nullptr;
+        // Обновление очереди с учетом частоты нового элемента (условного символа)
+        for (int k = j + 1; k < queue_length && queue_frequency[k] > queue_frequency[k + 1]; k++) {
+            ptr_node_frequency = queue_frequency[k];
+            queue_frequency[k] = queue_frequency[k + 1];
+            queue_frequency[k + 1] = ptr_node_frequency;
+            ptr_node = queue[k];
+            queue[k] = queue[k + 1];
+            queue[k + 1] = ptr_node;
+        }
         j++;
     }
 
@@ -194,25 +199,43 @@ int encode(const char* filepath, const char* filepath_new) {
     // Заполнение таблицы кодов Tab_code
     char* Tab_code[256] = { 0 };
     char code[256] = { 0 };
-    fill_Tab_code(ptr_node, code, 0, Tab_code);
+    fill_Tab_code(ptr_node, code, Tab_code);
+
+
+    // Запись таблицы Tab в файл
+    if (fprintf(file_new, "%c", (unsigned char)queue_length - 1) < 0) { // Записываем длину таблицы - 1, т.к. если длина таблицы = 0, то будет пустой файл и выйдем по коду выше
+        flag = -2;
+    }
+    for (int i = 0; i < 256; i++) {
+        if (Tab[i]) {
+            if (fprintf(file_new, "%c%zu", (char)i, Tab[i]) < 0) {
+                flag = -2;
+            }
+        }
+    }
+    //if (fprintf(file_new, "%c", '\n') < 0) {
+    //    flag = -2;
+    //}
+    long ptr_file_new = ftell(file_new);
+
 
     // Кодировние
     unsigned char byte = 0;
-    unsigned char mask = 16; // 0001 0000
+    unsigned char mask = 16; // 0001 0000 // Чтобы записать длину хвоста перед самим закодированным сообщением
     char* ptr_str = nullptr;
-    unsigned char count = 0;
+    unsigned char tail_length = 0; // Длина хвоста в конце файла
     flag = 1; // Временно
     while (flag > 0) {
         flag = fscanf(file, "%c", &_symbol);
         if (flag > 0) {
-            for (ptr_str = Tab_code[_symbol]; *ptr_str; ptr_str++) {
-                if (count == 8) {
+            for (ptr_str = Tab_code[(unsigned char) _symbol]; *ptr_str; ptr_str++) {
+                if (tail_length == 8) {
                     if (fprintf(file_new, "%c", byte) < 0) {
                         flag = -2;
                     }
                     byte = 0;
                     mask = -1;
-                    count = 0;
+                    tail_length = 0;
                 }
                 if (*ptr_str == '0') {
                     byte = byte & ~mask;
@@ -221,20 +244,21 @@ int encode(const char* filepath, const char* filepath_new) {
                     byte = byte | mask;
                 }
                 mask = mask >> 1;
-                count++;
+                tail_length++;
             }
         }
     }
-    if (count != 0 && count != 8) {
+    if (tail_length != 0 && tail_length != 8) {
         if (fprintf(file_new, "%c", byte) < 0) { // Записываем округленный до целого байт
             flag = -2;
         }
-        if (fseek(file_new, 0, SEEK_SET)) { // Записываем сколько лишних символов в хвосте байта в начало файла
+        // Записываем сколько лишних символов в хвосте байта в начало файла
+        if (fseek(file_new, ptr_file_new, SEEK_SET)) { // Сбрасываемся на начало после таблицы частот, но перед кодированным сообщением (3 бита)
             flag = -2;
         }
         flag = fscanf(file_new, "%c", &byte);
-        count = count << 5; // В первые 3 бита информация
-        byte = byte | count;
+        tail_length = tail_length << 5; // В первые 3 бита информация
+        byte = byte | tail_length;
         if (fprintf(file_new, "%c", byte) < 0) { // Записываем длину хвоста
             flag = -2;
         }
