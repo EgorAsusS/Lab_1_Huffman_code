@@ -116,13 +116,13 @@ int encode(const char* filepath, const char* filepath_new) {
     if (!filepath || !filepath_new) {
         return 0;
     }
-    FILE* file = fopen(filepath, "r");
+    FILE* file = fopen(filepath, "rb");
     FILE* file_new = NULL;
     if (!file) {
         return 0;
     }
-    file_new = fopen(filepath_new, "w");
-    char _symbol = 0;
+    file_new = fopen(filepath_new, "wb");
+    //char _symbol = 0;
     int flag = 1;
     int queue_length = 0;
     Node* ptr_node = nullptr;
@@ -135,9 +135,9 @@ int encode(const char* filepath, const char* filepath_new) {
     //    flag = -2;
     //}
     while (flag > 0) {
-        flag = fscanf(file, "%c", &_symbol);
+        flag = fgetc(file);
         if (flag > 0) {
-            Tab[(unsigned char)_symbol]++;
+            Tab[(unsigned char)flag]++;
         }
     }
     if (fseek(file, 0, SEEK_SET)) {
@@ -203,14 +203,17 @@ int encode(const char* filepath, const char* filepath_new) {
 
 
     // Запись таблицы Tab в файл
-    if (fprintf(file_new, "%c", (unsigned char)queue_length - 1) < 0) { // Записываем длину таблицы - 1, т.к. если длина таблицы = 0, то будет пустой файл и выйдем по коду выше
-        flag = -2;
-    }
+    //if (fprintf(file_new, "%c", (unsigned char)queue_length - 1) < 0) { // Записываем длину таблицы - 1, т.к. если длина таблицы = 0, то будет пустой файл и выйдем по коду выше
+    //    flag = -2;
+    //}
+    flag = fputc((unsigned char)queue_length - 1, file_new);
     for (int i = 0; i < 256; i++) {
         if (Tab[i]) {
-            if (fprintf(file_new, "%c%zu", (char)i, Tab[i]) < 0) {
-                flag = -2;
-            }
+            //if (fprintf(file_new, "%c%zu", (char)i, Tab[i]) < 0) {
+            //    flag = -2;
+            //}
+            flag = fputc(i, file_new);
+            flag = fwrite(&Tab[i], sizeof(Tab[i]), 1, file_new);
         }
     }
     //if (fprintf(file_new, "%c", '\n') < 0) {
@@ -226,9 +229,10 @@ int encode(const char* filepath, const char* filepath_new) {
     unsigned char tail_length = 0; // Длина хвоста в конце файла
     flag = 1; // Временно
     while (flag > 0) {
-        flag = fscanf(file, "%c", &_symbol);
+        //flag = fscanf(file, "%c", &_symbol);
+        flag = fgetc(file);
         if (flag > 0) {
-            for (ptr_str = Tab_code[(unsigned char) _symbol]; *ptr_str; ptr_str++) {
+            for (ptr_str = Tab_code[(unsigned char) flag]; *ptr_str; ptr_str++) {
                 if (tail_length == 8) {
                     if (fprintf(file_new, "%c", byte) < 0) {
                         flag = -2;
@@ -249,19 +253,22 @@ int encode(const char* filepath, const char* filepath_new) {
         }
     }
     if (tail_length != 0 && tail_length != 8) {
-        if (fprintf(file_new, "%c", byte) < 0) { // Записываем округленный до целого байт
-            flag = -2;
-        }
+        //if (fprintf(file_new, "%c", byte) < 0) { // Записываем округленный до целого байт
+        //    flag = -2;
+        //}
+        flag = fputc(byte, file_new);
         // Записываем сколько лишних символов в хвосте байта в начало файла
         if (fseek(file_new, ptr_file_new, SEEK_SET)) { // Сбрасываемся на начало после таблицы частот, но перед кодированным сообщением (3 бита)
             flag = -2;
         }
-        flag = fscanf(file_new, "%c", &byte);
+        //flag = fscanf(file_new, "%c", &byte);
+        byte = fgetc(file);
         tail_length = tail_length << 5; // В первые 3 бита информация
         byte = byte | tail_length;
-        if (fprintf(file_new, "%c", byte) < 0) { // Записываем длину хвоста
-            flag = -2;
-        }
+        //if (fprintf(file_new, "%c", byte) < 0) { // Записываем длину хвоста
+        //    flag = -2;
+        //}
+        flag = fputc(byte, file_new);
     }
 
     delete ptr_node;
