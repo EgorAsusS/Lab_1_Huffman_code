@@ -1,5 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
+#include <stdio.h>
+#include <errno.h>
 using namespace std;
 
 struct Node {
@@ -25,6 +27,13 @@ int encode(const char* filepath, const char* filepath_new);
 int decode(const char* filepath, const char* filepath_new);
 
 int main() {
+    //FILE* file = fopen("source.txt", "wb");
+    //for (int j = 0; j < 10000; j++) {
+    //    for (int i = 0; i < 255; i++) {
+    //        fputc((unsigned char)i, file);
+    //    }
+    //}
+    //fclose(file);
     encode("source.txt", "encode.txt");
     return 0;
 }
@@ -121,7 +130,7 @@ int encode(const char* filepath, const char* filepath_new) {
     if (!file) {
         return 0;
     }
-    file_new = fopen(filepath_new, "wb");
+    file_new = fopen(filepath_new, "wb+");
     //char _symbol = 0;
     int flag = 1;
     int queue_length = 0;
@@ -134,9 +143,9 @@ int encode(const char* filepath, const char* filepath_new) {
     //if (fprintf(file_new, "%c", flag_tail) < 0) {
     //    flag = -2;
     //}
-    while (flag > 0) {
+    while (flag >= 0) {
         flag = fgetc(file);
-        if (flag > 0) {
+        if (flag >= 0) {
             Tab[(unsigned char)flag]++;
         }
     }
@@ -220,6 +229,7 @@ int encode(const char* filepath, const char* filepath_new) {
     //    flag = -2;
     //}
     long ptr_file_new = ftell(file_new);
+    
 
 
     // Кодировние
@@ -228,15 +238,16 @@ int encode(const char* filepath, const char* filepath_new) {
     char* ptr_str = nullptr;
     unsigned char tail_length = 0; // Длина хвоста в конце файла
     flag = 1; // Временно
-    while (flag > 0) {
+    while (flag >= 0) {
         //flag = fscanf(file, "%c", &_symbol);
         flag = fgetc(file);
-        if (flag > 0) {
+        if (flag >= 0) {
             for (ptr_str = Tab_code[(unsigned char) flag]; *ptr_str; ptr_str++) {
                 if (tail_length == 8) {
-                    if (fprintf(file_new, "%c", byte) < 0) {
-                        flag = -2;
-                    }
+                    //if (fprintf(file_new, "%c", byte) < 0) {
+                    //    flag = -2;
+                    //}
+                    flag = fputc(byte, file_new);
                     byte = 0;
                     mask = -1;
                     tail_length = 0;
@@ -262,7 +273,12 @@ int encode(const char* filepath, const char* filepath_new) {
             flag = -2;
         }
         //flag = fscanf(file_new, "%c", &byte);
-        byte = fgetc(file);
+        flag = fgetc(file_new);
+        //if (flag < 0) {
+        //    cout << ferror(file_new) << endl;
+        //    perror("Error fgetc");
+        //}
+        byte = (unsigned char)flag;
         tail_length = tail_length << 5; // В первые 3 бита информация
         byte = byte | tail_length;
         //if (fprintf(file_new, "%c", byte) < 0) { // Записываем длину хвоста
