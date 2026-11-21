@@ -4,7 +4,7 @@
 #define size 256
 using namespace std;
 
-struct Node { // Структура для построения дерева
+struct Node { // Структура узла для построения дерева
     char symbol;
     struct Node* left;
     struct Node* right;
@@ -18,6 +18,7 @@ struct Node { // Структура для построения дерева
 void delete_tree(Node* root);
 void Hoar_sort(size_t* arr, Node** arr_purpose, int l, int r);
 void Hoar_sort(size_t* arr_sorting, Node** arr_purpose, int length);
+int fill_Tab_code(Node* ptr, char* code, char** Tab_code);
 
 int encode(const char* filepath, const char* filepath_new);
 int decode(const char* filepath, const char* filepath_new);
