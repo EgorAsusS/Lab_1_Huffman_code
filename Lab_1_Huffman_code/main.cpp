@@ -1,7 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
-#include <stdio.h>
-#include <errno.h>
+#include <cstdio>
 using namespace std;
 
 struct Node { // Структура для построения дерева
@@ -16,9 +15,8 @@ struct Node { // Структура для построения дерева
 };
 
 void delete_tree(Node* root);
-void quick_sort(size_t* arr, Node** arr_purpose, int l, int r);
+void Hoar_sort(size_t* arr, Node** arr_purpose, int l, int r);
 void Hoar_sort(size_t* arr_sorting, Node** arr_purpose, int length);
-
 
 int encode(const char* filepath, const char* filepath_new);
 int decode(const char* filepath, const char* filepath_new);
@@ -40,7 +38,7 @@ void delete_tree(Node* root){
 }
 
 // Алгоритм сортировки Хоара для работы рекурсии
-void quick_sort(size_t* arr, Node** arr_purpose, int l, int r) {
+void Hoar_sort(size_t* arr, Node** arr_purpose, int l, int r) {
     if (arr == nullptr || arr_purpose == nullptr) {
         return;
     }
@@ -49,7 +47,7 @@ void quick_sort(size_t* arr, Node** arr_purpose, int l, int r) {
     }
     int i = l;
     int j = r;
-    int x = arr[(l + r) / 2];
+    size_t x = arr[(l + r) / 2];
     size_t temp = 0;
     Node* temp_purpose;
     while (i <= j) {
@@ -67,14 +65,14 @@ void quick_sort(size_t* arr, Node** arr_purpose, int l, int r) {
         }
     }
     temp_purpose = nullptr;
-    quick_sort(arr, arr_purpose, l, j);
-    quick_sort(arr, arr_purpose, i, r);
+    Hoar_sort(arr, arr_purpose, l, j);
+    Hoar_sort(arr, arr_purpose, i, r);
 }
 
 // Сортировка Хоара
 void Hoar_sort(size_t* arr_sorting, Node** arr_purpose, int length) {
     if (length) {
-        quick_sort(arr_sorting, arr_purpose, 0, length - 1);
+        Hoar_sort(arr_sorting, arr_purpose, 0, length - 1);
     }
 }
 
@@ -160,7 +158,7 @@ int encode(const char* filepath, const char* filepath_new) {
     unsigned char tail_length = 0;
     try {
         if (!filepath || !filepath_new) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
         file = fopen(filepath, "rb");
         if (!file) {
@@ -177,10 +175,10 @@ int encode(const char* filepath, const char* filepath_new) {
             }
         }
         if (ferror(file)) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
         if (fseek(file, 0, SEEK_SET)) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
         for (int i = 0; i < 256; i++) {
             if (Tab[i] != 0) {
@@ -197,33 +195,36 @@ int encode(const char* filepath, const char* filepath_new) {
             if (Tab[i]) {
                 flag = fputc(i, file_new);
                 if (flag < 0) {
-                    throw; // Error with code 0 for this moment
+                    throw 0; // Error with code 0 for this moment
                 }
                 flag = fwrite(&Tab[i], sizeof(Tab[i]), 1, file_new);
                 if (flag == 0) {
-                    throw; // Error with code 0 for this moment
+                    throw 0; // Error with code 0 for this moment
                 }
             }
         }
         ptr_file_new = ftell(file_new);
         if (ptr_file_new == -1L) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
 
         // Создание и заполнение очереди
-        queue = new Node * [queue_length];
+        queue = new Node* [queue_length];
         if (!queue) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
+        }
+        for (int i = 0; i < queue_length; i++) { // Зануление queue
+            queue[i] = nullptr;
         }
         for (int i = 0; i < queue_length; i++) {
             queue[i] = new Node;
             if (!queue[i]) {
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
         }
         queue_frequency = new size_t[queue_length];
         if (!queue_frequency) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
         for (int i = 0, j = 0; i < 256 && j < queue_length; i++) {
             if (Tab[i] != 0) {
@@ -240,7 +241,7 @@ int encode(const char* filepath, const char* filepath_new) {
         while (j != queue_length - 1) {
             ptr_node = new Node(0, queue[j], queue[j + 1]);
             if (!ptr_node) {
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
             ptr_node_frequency = queue_frequency[j] + queue_frequency[j + 1];
             queue[j + 1] = ptr_node;
@@ -264,7 +265,7 @@ int encode(const char* filepath, const char* filepath_new) {
 
         // Заполнение таблицы кодов Tab_code
         if (fill_Tab_code(ptr_node, code, Tab_code)) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
 
         // Кодировние
@@ -280,7 +281,7 @@ int encode(const char* filepath, const char* filepath_new) {
                     if (tail_length == 0) {
                         flag = fputc(byte, file_new);
                         if (flag < 0) { 
-                            throw; // Error with code 0 for this moment
+                            throw 0; // Error with code 0 for this moment
                         }
                         byte = 0;
                         mask = 128;
@@ -298,30 +299,30 @@ int encode(const char* filepath, const char* filepath_new) {
             }
         }
         if (ferror(file)) { 
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
         if (tail_length != 0) {
             flag = fputc(byte, file_new);
             if (flag < 0) { 
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
             // Записываем сколько лишних символов в хвосте байта в начало файла
             if (fseek(file_new, ptr_file_new, SEEK_SET)) { // Сбрасываемся на начало после таблицы частот, но перед кодированным сообщением (3 бита)
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
             flag = fgetc(file_new);
             if (flag < 0) {
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
             byte = (unsigned char)flag;
             tail_length = tail_length << 5; // В первые 3 бита информация
             byte = byte | tail_length;
             if (fseek(file_new, ptr_file_new, SEEK_SET)) { // Сбрасываемся на начало после таблицы частот, но перед кодированным сообщением (3 бита)
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
             flag = fputc(byte, file_new);
             if (flag < 0) {
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
         }
 
@@ -332,8 +333,10 @@ int encode(const char* filepath, const char* filepath_new) {
         delete_tree(ptr_node);
         delete ptr_node;
         ptr_node = nullptr;
-        for (int i = 0; i < queue_length; i++) {
-            delete queue[i];
+        if (queue) {
+            for (int i = 0; i < queue_length; i++) {
+                delete queue[i];
+            }
         }
         delete[] queue;
         delete[] queue_frequency;
@@ -351,19 +354,22 @@ int encode(const char* filepath, const char* filepath_new) {
                 if (fclose(file_new)) {
                     return_value = -2; // Error with code -2 for this moment
                 }
+                if (return_value != 1) {
+                    if (remove(filepath_new)) {
+                        return_value = -3; // Error with code -3 for this moment
+                    }
+                }
             }
         }
-        if (return_value != 1) {
-            if (remove(filepath_new)) {
-                return_value = -3; // Error with code -3 for this moment
-            }
-        }
+
 
         delete_tree(ptr_node);
         delete ptr_node;
         ptr_node = nullptr;
-        for (int i = 0; i < queue_length; i++) {
-            delete queue[i];
+        if (queue) {
+            for (int i = 0; i < queue_length; i++) {
+                delete queue[i];
+            }
         }
         delete[] queue;
         delete[] queue_frequency;
@@ -389,8 +395,10 @@ int encode(const char* filepath, const char* filepath_new) {
         delete_tree(ptr_node);
         delete ptr_node;
         ptr_node = nullptr;
-        for (int i = 0; i < queue_length; i++) {
-            delete queue[i];
+        if (queue) {
+            for (int i = 0; i < queue_length; i++) {
+                delete queue[i];
+            }
         }
         delete[] queue;
         delete[] queue_frequency;
@@ -425,15 +433,15 @@ int decode(const char* filepath, const char* filepath_new) {
     unsigned char tail_length = 0;
     try {
         if (!filepath || !filepath_new) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
         file = fopen(filepath, "rb");
         if (!file) {
-            throw - 1; // Error with code -1 for this moment
+            throw -1; // Error with code -1 for this moment
         }
         file_new = fopen(filepath_new, "wb+");
         if (!file_new) {
-            throw - 1; // Error with code -1 for this moment
+            throw -1; // Error with code -1 for this moment
         }
 
         // Считывание таблицы Tab из файла
@@ -447,11 +455,11 @@ int decode(const char* filepath, const char* filepath_new) {
             if (flag >= 0) {
                 flag = fread(&Tab[flag], sizeof(Tab[flag]), 1, file);
                 if (flag == 0) { // Ошибка таблица неполная
-                    throw; // Error with code 0 for this moment
+                    throw 0; // Error with code 0 for this moment
                 }
             }
             else { // Ошибка, т.к. только по таблице нельзя декодировать файл (либо таблица неполная)
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
         }
         for (int i = 0; i < 256; i++) {
@@ -466,17 +474,20 @@ int decode(const char* filepath, const char* filepath_new) {
         // Создание и заполнение очереди
         queue = new Node * [queue_length];
         if (!queue) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
+        }
+        for (int i = 0; i < queue_length; i++) { // Зануление queue
+            queue[i] = nullptr;
         }
         for (int i = 0; i < queue_length; i++) {
             queue[i] = new Node;
             if (!queue[i]) {
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
         }
         queue_frequency = new size_t[queue_length];
         if (!queue_frequency) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
         for (int i = 0, j = 0; i < 256 && j < queue_length; i++) {
             if (Tab[i] != 0) {
@@ -493,7 +504,7 @@ int decode(const char* filepath, const char* filepath_new) {
         while (j != queue_length - 1) {
             ptr_node = new Node(0, queue[j], queue[j + 1]);
             if (!ptr_node) {
-                throw; // Error with code 0 for this moment
+                throw 0; // Error with code 0 for this moment
             }
             ptr_node_frequency = queue_frequency[j] + queue_frequency[j + 1];
             queue[j + 1] = ptr_node;
@@ -524,7 +535,7 @@ int decode(const char* filepath, const char* filepath_new) {
             tail_length = tail_length >> 5; // Чтобы получилось это число не в старших битах
         }
         else {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
 
         //ptr_node - корень
@@ -536,7 +547,7 @@ int decode(const char* filepath, const char* filepath_new) {
             if (ptr->left == nullptr && ptr->right == nullptr) { // Или || ? /////////////////////  // Лист дерева => соответствует символу
                 flag_file_new = fputc(ptr->symbol, file_new);
                 if (flag_file_new < 0) {
-                    throw;
+                    throw 0;
                 }
                 ptr = ptr_node;
             }
@@ -554,14 +565,14 @@ int decode(const char* filepath, const char* filepath_new) {
             }
         }
         if (ferror(file)) {
-            throw; // Error with code 0 for this moment
+            throw 0; // Error with code 0 for this moment
         }
         if (tail_length) {
             for (int i = 0; i < 9 - tail_length; i++) {
                 if (ptr->left == nullptr && ptr->right == nullptr) { // Или || ? /////////////////////  // Лист дерева => соответствует символу
                     flag_file_new = fputc(ptr->symbol, file_new);
                     if (flag_file_new < 0) {
-                        throw;
+                        throw 0;
                     }
                     ptr = ptr_node;
                 }
@@ -576,14 +587,16 @@ int decode(const char* filepath, const char* filepath_new) {
         }
 
         if (fclose(file_new) || fclose(file)) {
-            throw - 2; // Error with code -2 for this moment
+            throw -2; // Error with code -2 for this moment
         }
 
         delete_tree(ptr_node);
         delete ptr_node;
         ptr_node = nullptr;
-        for (int i = 0; i < queue_length; i++) {
-            delete queue[i];
+        if (queue) {
+            for (int i = 0; i < queue_length; i++) {
+                delete queue[i];
+            }
         }
         delete[] queue;
         delete[] queue_frequency;
@@ -601,13 +614,14 @@ int decode(const char* filepath, const char* filepath_new) {
                 if (fclose(file_new)) {
                     return_value = -2; // Error with code -2 for this moment
                 }
+                if (return_value != 1) {
+                    if (remove(filepath_new)) {
+                        return_value = -3; // Error with code -3 for this moment
+                    }
+                }
             }
         }
-        if (return_value != 1) {
-            if (remove(filepath_new)) {
-                return_value = -3; // Error with code -3 for this moment
-            }
-        }
+
 
         delete_tree(ptr_node);
         delete ptr_node;
@@ -639,8 +653,10 @@ int decode(const char* filepath, const char* filepath_new) {
         delete_tree(ptr_node);
         delete ptr_node;
         ptr_node = nullptr;
-        for (int i = 0; i < queue_length; i++) {
-            delete queue[i];
+        if (queue) {
+            for (int i = 0; i < queue_length; i++) {
+                delete queue[i];
+            }
         }
         delete[] queue;
         delete[] queue_frequency;
