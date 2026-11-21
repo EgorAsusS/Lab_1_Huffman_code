@@ -453,6 +453,7 @@ int decode(const char* filepath, const char* filepath_new) {
     int flag = 0;
     int flag_end = 0;
     int flag_file_new = 0;
+    int shift_tail_length = 0;
     int queue_length = 0;
     size_t ptr_node_frequency = 0;
     size_t Tab[256] = { 0 };
@@ -562,7 +563,7 @@ int decode(const char* filepath, const char* filepath_new) {
         // Декодирование
         byte = 0;
         mask = 224; // 1110 0000 // Чтобы считать длину хвоста (3 бит)
-        tail_length = 0; // Длина хвоста в конце файла (Изначально 0)
+        tail_length = 5; // Длина хвоста в конце файла (Изначально 5)
         flag = fgetc(file);
         if (flag >= 0) {
             tail_length = flag & mask; // Реальная длина хвоста
@@ -577,8 +578,12 @@ int decode(const char* filepath, const char* filepath_new) {
         mask = 16; // 0001 0000 // Чтобы считывать после длины хвоста (после 3 бит)
         flag_file_new = 0;
         flag_end = fgetc(file);
+        shift_tail_length = 5;
+        if (flag_end >= 0) {
+            shift_tail_length = 8;
+        }
         while (flag_end >= 0) {
-            if (ptr->left == nullptr && ptr->right == nullptr) { // Или || ? /////////////////////  // Лист дерева => соответствует символу
+            if (ptr->left == nullptr && ptr->right == nullptr) {
                 flag_file_new = fputc(ptr->symbol, file_new);
                 if (flag_file_new < 0) {
                     throw 0;
@@ -586,10 +591,14 @@ int decode(const char* filepath, const char* filepath_new) {
                 ptr = ptr_node;
             }
             if (flag & mask) {
-                ptr = ptr->right;
+                if (ptr->right) { // Корень может быть символом => left == right == nullptr
+                    ptr = ptr->right;
+                }
             }
             else {
-                ptr = ptr->left;
+                if (ptr->left) { // Корень может быть символом => left == right == nullptr
+                    ptr = ptr->left;
+                }
             }
             mask = mask >> 1;
             if (mask == 0) {
@@ -602,8 +611,8 @@ int decode(const char* filepath, const char* filepath_new) {
             throw 0; // Error with code 0 for this moment
         }
         if (tail_length) {
-            for (int i = 0; i < 9 - tail_length; i++) {
-                if (ptr->left == nullptr && ptr->right == nullptr) { // Или || ? /////////////////////  // Лист дерева => соответствует символу
+            for (int i = 0; i < shift_tail_length - tail_length; i++) {
+                if (ptr->left == nullptr && ptr->right == nullptr) {
                     flag_file_new = fputc(ptr->symbol, file_new);
                     if (flag_file_new < 0) {
                         throw 0;
@@ -611,10 +620,14 @@ int decode(const char* filepath, const char* filepath_new) {
                     ptr = ptr_node;
                 }
                 if (flag & mask) {
-                    ptr = ptr->right;
+                    if (ptr->right) { // Корень может быть символом => left == right == nullptr
+                        ptr = ptr->right;
+                    }
                 }
                 else {
-                    ptr = ptr->left;
+                    if (ptr->left) { // Корень может быть символом => left == right == nullptr
+                        ptr = ptr->left;
+                    }
                 }
                 mask = mask >> 1;
             }
