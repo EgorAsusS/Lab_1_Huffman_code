@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <cstdio>
+#define size 256
 using namespace std;
 
 struct Node { // Структура для построения дерева
@@ -22,9 +23,42 @@ int encode(const char* filepath, const char* filepath_new);
 int decode(const char* filepath, const char* filepath_new);
 
 int main() {
-    encode("source.txt", "encode.txt");
-    decode("encode.txt", "decode.txt");
-    return 0;
+    int flag = 0;
+    char mode = 0;
+    char source[size] = { 0 };
+    char destination[size] = { 0 };
+    while (mode != 'e' && mode != 'd') {
+        cout << "Change if you want to encode(e) or decode(d) your file. Input 'e' or 'd': " << endl;
+        cin >> mode;
+    }
+    cin.ignore();
+    cout << "Input source's filepath: " << endl;
+    cin.getline(source, size);
+    cout << "Input destination's filepath: " << endl;
+    cin.getline(destination, size);
+    if (mode == 'e') {
+        flag = encode(source, destination);
+    }
+    else {
+        flag = decode(source, destination);
+    }
+    if (flag == 1) {
+        cout << "successful" << endl;
+        return 0;
+    }
+    else if (flag == -1) {
+        cerr << "Error occured while openning file" << endl;
+    }
+    else if (flag == -2) {
+        cerr << "Error occured while closing file" << endl;
+    }
+    else if (flag == -3) {
+        cerr << "Error occured while removing file" << endl;
+    }
+    else {
+        cerr << "Error of reading, writing, moving onto file or other error";
+    }
+    return 1;
 }
 
 void delete_tree(Node* root){
